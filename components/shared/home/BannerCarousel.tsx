@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 
 const desktopImages = [
   "https://res.cloudinary.com/dtxh3ew7s/image/upload/v1727399729/pixelcut-export_smh3fv.png",

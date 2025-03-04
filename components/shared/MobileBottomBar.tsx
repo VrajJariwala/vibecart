@@ -2,7 +2,7 @@
 import { useStore, useAtom } from "jotai";
 import { Grid, Home, Menu, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
-import { hamburgerMenuState, cartMenuState, accountMenuState } from "./store";
+import { hamburgerMenuState, cartMenuState, accountMenuState } from "./navbar/store";
 const MobileBottomBar = () => {
   const [hamMenuOpen, setHamMenuOpen] = useAtom(hamburgerMenuState, {
     store: useStore(),

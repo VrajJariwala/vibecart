@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
-import { Button } from "../ui/button";
+
 import Link from "next/link";
+import { Button } from '@/components/ui/button';
 interface Product {
   id: string;
   name: string;

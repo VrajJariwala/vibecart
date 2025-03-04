@@ -1,9 +1,9 @@
 /* eslint no-use-before-define: 0 */
 
 import React from "react";
-import { Dialog } from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+import { Dialog } from "@radix-ui/react-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 const SearchModal = ({ setOpen }: { setOpen: any }) => {
   const trendingSearches = [

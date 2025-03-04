@@ -4,7 +4,7 @@ import * as React from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
-import { cartMenuState, hamburgerMenuState } from "../store";
+import { cartMenuState, hamburgerMenuState } from "../shared/navbar/store";
 
 import { cn } from "@/lib/utils";
 import { useAtom, useStore } from "jotai";
