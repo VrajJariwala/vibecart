@@ -4,13 +4,6 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const desktopImages = [
-  "https://res.cloudinary.com/dtxh3ew7s/image/upload/v1727399729/pixelcut-export_smh3fv.png",
-  "https://res.cloudinary.com/dtxh3ew7s/image/upload/v1727399729/pixelcut-export_2_ze8uvi.png",
-  "https://res.cloudinary.com/dtxh3ew7s/image/upload/v1727399729/pixelcut-export_3_ovaqca.png",
-  "https://res.cloudinary.com/dtxh3ew7s/image/upload/v1727399728/pixelcut-export_1_focyqi.png",
-];
-
 const mobileImages = [
   "https://placehold.co/400x200?text=Mobile+Slide+1",
   "https://placehold.co/400x200?text=Mobile+Slide+2",
@@ -18,7 +11,7 @@ const mobileImages = [
   "https://placehold.co/400x200?text=Mobile+Slide+4",
 ];
 
-const BannerCarousel = () => {
+const BannerCarousel = ({ desktopImages }: { desktopImages: string[] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
