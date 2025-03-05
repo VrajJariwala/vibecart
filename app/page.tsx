@@ -9,17 +9,22 @@ import ReviewSection from '@/components/shared/home/ReviewSection'
 
 import SpecialCombos from '@/components/shared/home/SpecialCombos'
 import { fetchAllWebsiteBanners } from '@/lib/database/actions/banners.actions'
+import { getAllSpecialComboOffers } from '@/lib/database/actions/homescreenoffers.actions'
 import { log } from 'console'
 import React from 'react'
 
 
 const Homepage = async  ()  => {
   const desktopImages:any = await fetchAllWebsiteBanners().catch((err)=>console.log(err));
-  console.log(desktopImages)
+ 
+  const specialCombosHomeData:any = await getAllSpecialComboOffers().catch((err)=>console.log(err));
+
+  console.log(specialCombosHomeData);
+  
   return (
     <div>
       <BannerCarousel desktopImages={desktopImages}/>
-      <SpecialCombos/>
+      <SpecialCombos comboData={specialCombosHomeData}/>
       <ProductCard heading="BEST SELLERS" />
       <CategorySection/>
       <CrazyDeals/>

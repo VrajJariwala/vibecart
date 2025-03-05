@@ -1,4 +1,4 @@
-"use  server";
+"use server";
 
 import { handleError } from "@/lib/utils";
 import { connectToDatabase } from "../connect";
