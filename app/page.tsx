@@ -9,7 +9,7 @@ import ReviewSection from '@/components/shared/home/ReviewSection'
 
 import SpecialCombos from '@/components/shared/home/SpecialCombos'
 import { fetchAllWebsiteBanners } from '@/lib/database/actions/banners.actions'
-import { getAllSpecialComboOffers } from '@/lib/database/actions/homescreenoffers.actions'
+import { getAllCrazyDealOffers, getAllSpecialComboOffers } from '@/lib/database/actions/homescreenoffers.actions'
 import { log } from 'console'
 import React from 'react'
 
@@ -19,7 +19,9 @@ const Homepage = async  ()  => {
  
   const specialCombosHomeData:any = await getAllSpecialComboOffers().catch((err)=>console.log(err));
 
-  console.log(specialCombosHomeData);
+   const crazyDealsData:any = await getAllCrazyDealOffers().catch((err)=>console.log(err));
+
+  console.log("dealsData",crazyDealsData);
   
   return (
     <div>
@@ -27,7 +29,7 @@ const Homepage = async  ()  => {
       <SpecialCombos comboData={specialCombosHomeData}/>
       <ProductCard heading="BEST SELLERS" />
       <CategorySection/>
-      <CrazyDeals/>
+      <CrazyDeals dealsData={crazyDealsData}/>
       <NeedOfWebsite/>
       <ReviewSection/>
       <BlogImages/>
