@@ -1,25 +1,25 @@
 "use client";
-
-
-
+import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { useAtom, useStore } from "jotai";
 import { accountMenuState } from "./store";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
+import { useClerk, useUser } from "@clerk/nextjs";
 
-  import Link from "next/link";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 const AccountDropDown = () => {
+  const { isSignedIn: isLoggedIn } = useUser();
+  const { signOut } = useClerk();
+
   const [accountMenuOpen, setAccountMenuOpen] = useAtom(accountMenuState, {
     store: useStore(),
   });
@@ -27,8 +27,6 @@ const AccountDropDown = () => {
     setAccountMenuOpen(true);
     console.log("acc", accountMenuOpen);
   };
-
-const[isLoggedIn, setIsLoggedIn] = useState(true);
 
   return (
     <DropdownMenu open={accountMenuOpen} onOpenChange={setAccountMenuOpen}>
@@ -83,7 +81,7 @@ const[isLoggedIn, setIsLoggedIn] = useState(true);
           </p>
         ) : (
           <DropdownMenuItem
-            // onClick={() => signOut({ redirectUrl: "/sign-in" })}
+            onClick={() => signOut({ redirectUrl: "/sign-in" })}
           >
             <LogOut />
             <span>Log out</span>
