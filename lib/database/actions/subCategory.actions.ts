@@ -1,4 +1,5 @@
 "use server";
+
 import { handleError } from "@/lib/utils";
 import { connectToDatabase } from "../connect";
 import SubCategory from "../models/subCategory.model";
@@ -28,7 +29,6 @@ export const getAllSubCategoriesByParentId = unstable_cache(
     revalidate: 1800,
   }
 );
-
 // get all sub categories by its parent name
 export const getAllSubCategoriesByName = unstable_cache(
   async (name: string) => {

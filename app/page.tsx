@@ -11,6 +11,7 @@ import SpecialCombos from '@/components/shared/home/SpecialCombos'
 import { fetchAllWebsiteBanners } from '@/lib/database/actions/banners.actions'
 import { getAllCrazyDealOffers, getAllSpecialComboOffers } from '@/lib/database/actions/homescreenoffers.actions'
 import { getTopSellingProducts } from '@/lib/database/actions/product.actions'
+import { getAllSubCategoriesByName } from '@/lib/database/actions/subCategory.actions'
 
 import React from 'react'
 
@@ -18,6 +19,10 @@ import React from 'react'
 const Homepage = async  ()  => {
   const desktopImages:any = await fetchAllWebsiteBanners().catch((err)=>console.log(err));
  
+  const subcategoriesData: any = await getAllSubCategoriesByName(
+    "unisex"
+  ).catch((err) => console.log(err));
+
   const specialCombosHomeData:any = await getAllSpecialComboOffers().catch((err)=>console.log(err));
 
    const crazyDealsData:any = await getAllCrazyDealOffers().catch((err)=>console.log(err));
@@ -26,11 +31,7 @@ const Homepage = async  ()  => {
     console.log(err)
   );
   
-
-
- 
-
-  const transformedBestSellerProducts = topSellingProducts?.products.map(
+    const transformedBestSellerProducts = topSellingProducts?.products.map(
     (product: any) => ({
       id: product._id,
       name: product.name,
@@ -59,7 +60,7 @@ const Homepage = async  ()  => {
       <BannerCarousel desktopImages={desktopImages}/>
       <SpecialCombos comboData={specialCombosHomeData}/>
       <ProductCard heading="BEST SELLERS" products={transformedBestSellerProducts} />
-      <CategorySection/>
+      <CategorySection subCategories={subcategoriesData.subCategories}/>
       <CrazyDeals dealsData={crazyDealsData}/>
       <NeedOfWebsite/>
       <ReviewSection/>

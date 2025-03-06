@@ -27,8 +27,8 @@ const Card = ({ product, shop }: { product: Product; shop?: boolean }) => {
       <div className="relative overflow-hidden">
         <Link href={`/product/${product.slug}?style=0`}>
           <img
-            src={product.image}
-            alt={product.name}
+            src={product.image || "/placeholder.jpg"}
+            alt={product.name || "Product Image"}
             className="w-full h-auto object-cover mb-4 transition-transform duration-700 ease-in-out transform group-hover:scale-110"
           />
         </Link>
