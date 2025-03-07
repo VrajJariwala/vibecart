@@ -2,8 +2,8 @@
 "use client";
 
 // Import necessary components and libraries
-import ProductCard from "@/components/home/ProductCard";
-import FilterButton from "@/components/shop/FilterButton";
+import ProductCard from "@/components/shared/home/ProductCard";
+import FilterButton from "@/components/shared/shop/FilterButton";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
@@ -45,8 +45,8 @@ const ShopPage = () => {
       </div>
 
       {/* Display product cards - passing 'shop' prop to adjust the layout for the shop page */}
-      <ProductCard heading="" shop={true} />
-      <ProductCard heading="" shop={true} />
+      {/* <ProductCard heading="" shop={true} />
+      <ProductCard heading="" shop={true} /> */}
     </div>
   );
 };

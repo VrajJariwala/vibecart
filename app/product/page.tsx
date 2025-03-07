@@ -7,9 +7,9 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import Marquee from "react-fast-marquee";
-import ProductCard from "@/components/home/ProductCard";
-import ProductReviewComponent from "@/components/product/ProductReviewComponent";
-import ProductDetailsAccordian from "@/components/product/ProductDetailsAccordian";
+import ProductCard from "@/components/shared/home/ProductCard";
+import ProductReviewComponent from "@/components/shared/product/ProductReviewComponent";
+import ProductDetailsAccordian from "@/components/shared/product/ProductDetailsAccordian";
 
 // ProductPage component: Individual product detail page layout with product carousel,
 // price details, ratings, reviews, and recommendations
@@ -153,7 +153,7 @@ const ProductPage = () => {
         <ProductReviewComponent />
 
         {/* Related Products Section: Suggests additional products */}
-        <ProductCard heading="YOU MAY ALSO LIKE" />
+        {/* <ProductCard heading="YOU MAY ALSO LIKE" /> */}
       </div>
     </div>
   );

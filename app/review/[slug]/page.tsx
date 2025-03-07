@@ -1,5 +1,6 @@
 import React from "react";
-
+import { ObjectId } from "mongodb";
+// import IdInvalidError from "@/components/shared/IdInvalidError";
 import Image from "next/image";
 import { ThumbsUp, ThumbsDown, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getSingleProduct } from "@/lib/database/actions/product.actions";
 
 interface Review {
   rating: number;
@@ -20,84 +22,32 @@ interface Review {
   helpful: number;
   unhelpful: number;
 }
-const IndividualProductReviewPage = ({}) => {
-  const reviews: Review[] = [
-    {
-      rating: 5,
-      comment: "Cool",
-      author: "Varsha Ladhi",
-      date: "20 Nov 2024",
-      helpful: 0,
-      unhelpful: 0,
-    },
-    {
-      rating: 4,
-      comment:
-        "Good tshirt but a thicker material would have been even better.",
-      author: "Vyshali Reddy",
-      date: "14 Dec 2023",
-      helpful: 0,
-      unhelpful: 0,
-    },
-    {
-      rating: 4,
-      comment: "Good quality. Nice print.",
-      author: "Vasundhra",
-      date: "11 Oct 2024",
-      helpful: 0,
-      unhelpful: 0,
-    },
-    {
-      rating: 5,
-      comment: "Better than expected",
-      author: "Priyansh Patel",
-      date: "22 Aug 2024",
-      helpful: 0,
-      unhelpful: 0,
-    },
-    {
-      rating: 5,
-      comment: "Very good",
-      author: "Sandeep Poshala",
-      date: "5 May 2024",
-      helpful: 0,
-      unhelpful: 0,
-    },
-    {
-      rating: 4,
-      comment: "Nice",
-      author: "Juhi",
-      date: "26 June 2024",
-      helpful: 0,
-      unhelpful: 0,
-    },
-    {
-      rating: 5,
-      comment: "Good",
-      author: "Kusumanjali",
-      date: "19 Nov 2024",
-      helpful: 0,
-      unhelpful: 0,
-    },
-  ];
+const IndividualProductReviewPage = async ({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) => {
+  const slug = (await params).slug;
+  const product = await getSingleProduct(slug, 0, 0);
+  console.log(product);
+  // return <IdInvalidError />;
 
-  const ratingCounts: any = {
-    5: 58,
-    4: 16,
-    3: 3,
-    2: 0,
-    1: 1,
-  };
+  const reviews: Review[] = product.reviews.map((review: any) => ({
+    rating: review.rating,
+    comment: review.review,
+    author: review.reviewBy.username, // Assuming 'name' is a field in 'reviewBy'
+    date: new Date(review.reviewCreatedAt).toLocaleDateString(), // Format date
+    helpful: review.helpful || 0, // Adjust if 'helpful' data exists in your schema
+    unhelpful: review.unhelpful || 0,
+  }));
+  const ratingCounts: any = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  reviews.forEach((review) => {
+    ratingCounts[review.rating]++;
+  });
 
-  const totalRatings = Object.values(ratingCounts).reduce(
-    (a: any, b: any) => a + b,
-    0
-  );
+  const totalRatings = reviews.length;
   const averageRating = (
-    Object.entries(ratingCounts).reduce(
-      (acc, [rating, count]) => acc + Number(rating) * count,
-      0
-    ) / totalRatings
+    reviews.reduce((sum, review) => sum + review.rating, 0) / totalRatings
   ).toFixed(1);
 
   return (
@@ -107,18 +57,22 @@ const IndividualProductReviewPage = ({}) => {
           <div className="md:sticky md:top-6 md:self-start">
             <Card className="p-6">
               <Image
-                src="/placeholder.svg"
+                src={product.images[0].url}
                 alt=""
                 width={400}
-                height={300}
+                height={200}
                 className="w-full rounded-lg mb-4"
               />
-              <h1 className="text-2xl font-bold mb-2">Product Name</h1>
-              <p className="text-gray-600 mb-4">Product Description</p>
+              <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
+              <p className="text-gray-600 mb-4">{product.description}</p>
               <div className="flex items-baseline gap-2 mb-6">
-                <span className="text-2xl font-bold">Rs. 699</span>
-                <span className="text-gray-500 line-through">Rs. 1499</span>
-                <span className="text-orange-500">(Rs. 800 OFF)</span>
+                <span className="text-2xl font-bold">Rs. {product.price}</span>
+                <span className="text-gray-500 line-through">
+                  Rs. {product.priceBefore.toFixed(2)}
+                </span>
+                {product.discount > 0 && (
+                  <span className="text-orange-500">-{product.discount}%</span>
+                )}
               </div>
             </Card>
           </div>
