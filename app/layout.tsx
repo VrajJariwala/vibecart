@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+
+
 import Navbar from "@/components/shared/navbar/Navbar";
 import Footer from "@/components/shared/Footer";
 import MobileBottomBar from "@/components/shared/MobileBottomBar";
 import { Toaster } from "sonner";
 import { ClerkProvider } from "@clerk/nextjs";
-// import TopBarComponent from "@/components/shared/TopBar";
+import TopBarComponent from '@/components/shared/TopBar';
+
 // const geistSans = localFont({
 //   src: "./fonts/Geist-v1.4.01",
 //   variable: "--font-geist-sans",
@@ -34,7 +37,7 @@ export default function RootLayout({
         <body
           // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {/* <TopBarComponent /> */}
+          <TopBarComponent/>
           <Navbar />
           {children}
           <MobileBottomBar />

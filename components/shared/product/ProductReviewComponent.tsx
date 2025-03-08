@@ -28,7 +28,7 @@ import { useRouter } from "next/navigation";
 import { handleError } from "@/lib/utils";
 import { createProductReview } from "@/lib/database/actions/product.actions";
 import { toast } from "sonner";
-//  import { revalidatePath } from "next/cache";
+// import { revalidatePath } from "next/cache";
 import Link from "next/link";
 
 const ProductReviewComponent = ({
@@ -78,7 +78,6 @@ const ProductReviewComponent = ({
           setReviews(res.reviews);
           form.setValues({ rating: "", review: "" });
           toast.success("Successfully added product review");
-          // revalidatePath("/product");
         })
         .catch((err) => alert(err))
         .finally(() => {
