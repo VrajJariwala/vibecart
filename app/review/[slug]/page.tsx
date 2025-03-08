@@ -1,6 +1,6 @@
 import React from "react";
 import { ObjectId } from "mongodb";
-// import IdInvalidError from "@/components/shared/IdInvalidError";
+import IdInvalidError from "@/components/shared/IdInvalidError";
 import Image from "next/image";
 import { ThumbsUp, ThumbsDown, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
