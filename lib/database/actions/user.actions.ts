@@ -210,7 +210,7 @@ export async function getAllUserOrdersProfile(clerkId: string) {
         day: "numeric",
         year: "numeric",
       }),
-      total: order.total, 
+      total: order.total,
     }));
 
     return JSON.parse(JSON.stringify(filteredOrders));
