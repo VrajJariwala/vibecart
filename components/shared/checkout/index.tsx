@@ -15,7 +15,7 @@ import { useCartStore } from "@/store/cart";
 import { FaArrowAltCircleRight } from "react-icons/fa";
 import {
   createOrder,
-//   createStripeOrder,
+   createStripeOrder,
 } from "@/lib/database/actions/order.actions";
 import { getSavedCartForUser } from "@/lib/database/actions/cart.actions";
 import DeliveryAddressForm from "./delivery.address.form";
@@ -45,15 +45,14 @@ export default function CheckoutComponent() {
     },
     validate: {
       firstName: (value) =>
-        value.trim().length < 6
+        value.trim().length < 3
           ? "First name must be at least 6 letters"
           : null,
       lastName: (value) =>
         value.trim().length < 2 ? "Last name must be at least 2 letters" : null,
       phoneNumber: (value) =>
-        value.trim().length < 10 && value.trim().length > 10
-          ? "Phone Number must be within 10 numbers"
-          : null,
+        value.trim().length !== 10 ? "Phone Number must be exactly 10 digits" : null,
+      
       state: (value) =>
         value.length < 2 ? "State must be at least 2 letters" : null,
       city: (value) =>
@@ -169,26 +168,26 @@ export default function CheckoutComponent() {
       }
 
       // For Stripe Payment
-    //   if (paymentMethod === "stripe") {
-    //     const response = await createStripeOrder(
-    //       data?.products,
-    //       user?.address,
-    //       paymentMethod,
-    //       totalAfterDiscount !== "" ? totalAfterDiscount : data?.cartTotal,
-    //       data?.cartTotal,
-    //       coupon,
-    //       user._id,
-    //       totalSaved
-    //     );
+      if (paymentMethod === "stripe") {
+        const response = await createStripeOrder(
+          data?.products,
+          user?.address,
+          paymentMethod,
+          totalAfterDiscount !== "" ? totalAfterDiscount : data?.cartTotal,
+          data?.cartTotal,
+          coupon,
+          user._id,
+          totalSaved
+        );
 
-    //     // Redirect to Stripe Checkout on the client side
-    //     if (response?.sessionUrl) {
-    //       window.location.href = response.sessionUrl;
-    //     } else {
-    //       toast.error("Stripe session URL not found");
-    //       throw new Error("Stripe session URL not found");
-    //     }
-    //   }
+        // Redirect to Stripe Checkout on the client side
+        if (response?.sessionUrl) {
+          window.location.href = response.sessionUrl;
+        } else {
+          toast.error("Stripe session URL not found");
+          throw new Error("Stripe session URL not found");
+        }
+      }
       // For other payment methods like Razorpay, handle accordingly
       else {
         const orderResponse = await createOrder(
