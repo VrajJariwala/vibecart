@@ -177,11 +177,11 @@ export async function createStripeOrder(
     success_url:
       process.env.NODE_ENV === "development"
         ? `http://localhost:3000/order/${newOrder._id}`
-        : `hhttps://vibecart-jet.vercel.app//order/${newOrder._id}`,
+        : `https://vibecart-jet.vercel.app/order/${newOrder._id}`,
     cancel_url:
       process.env.NODE_ENV === "development"
         ? `http://localhost:3000/payment/cancel`
-        : `https://vibecart-jet.vercel.app//payment/cancel`,
+        : `https://vibecart-jet.vercel.app/payment/cancel`,
     metadata: { orderId: newOrder._id.toString() },
   });
 
