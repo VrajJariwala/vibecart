@@ -15,7 +15,7 @@ import { useCartStore } from "@/store/cart";
 import { FaArrowAltCircleRight } from "react-icons/fa";
 import {
   createOrder,
-   createStripeOrder,
+  createStripeOrder,
 } from "@/lib/database/actions/order.actions";
 import { getSavedCartForUser } from "@/lib/database/actions/cart.actions";
 import DeliveryAddressForm from "./delivery.address.form";
@@ -44,15 +44,26 @@ export default function CheckoutComponent() {
       country: "",
     },
     validate: {
-      firstName: (value) =>
-        value.trim().length < 3
-          ? "First name must be at least 6 letters"
-          : null,
-      lastName: (value) =>
-        value.trim().length < 2 ? "Last name must be at least 2 letters" : null,
+      firstName: (value) => {
+        if (value.trim().length < 3) {
+          return "First name must be at least 3 letters";
+        }
+        if (/\d/.test(value)) {
+          return "First name cannot contain numbers";
+        }
+        return null;
+      },
+      lastName: (value) => {
+        if (value.trim().length < 2) {
+          return "Last name must be at least 2 letters";
+        }
+        if (/\d/.test(value)) {
+          return "Last name cannot contain numbers";
+        }
+        return null;
+      },
       phoneNumber: (value) =>
         value.trim().length !== 10 ? "Phone Number must be exactly 10 digits" : null,
-      
       state: (value) =>
         value.length < 2 ? "State must be at least 2 letters" : null,
       city: (value) =>
@@ -116,7 +127,7 @@ export default function CheckoutComponent() {
         if (res.success) {
           setTotalAfterDiscount(res.totalAfterDiscount);
           setDiscount(res.discount);
-          toast.success(`Applied ${res.discount}% on order successfuly.`);
+          toast.success(`Applied ${res.discount}% on order successfully.`);
           setCouponError("");
           nextStep();
         } else if (!res.success) {
@@ -128,7 +139,6 @@ export default function CheckoutComponent() {
   const { emptyCart } = useCartStore();
 
   const totalSaved: number = cart.reduce((acc: any, curr: any) => {
-    // Add the 'saved' property value to the accumulator
     return acc + curr.saved * curr.qty;
   }, 0);
   const [subTotal, setSubtotal] = useState<number>(0);
@@ -153,9 +163,18 @@ export default function CheckoutComponent() {
   useEffect(() => {
     useCartStore.persist.rehydrate();
   }, []);
+
   const placeOrderHandler = async () => {
     try {
       setPlaceOrderLoading(true);
+
+      // Validate the form fields
+      const formErrors = form.validate();
+      if (formErrors.hasErrors) {
+        toast.error("Please correct the errors in the form before proceeding.");
+        setPlaceOrderLoading(false);
+        return;
+      }
 
       if (paymentMethod === "") {
         toast.error("Please choose a payment method.");
@@ -188,7 +207,7 @@ export default function CheckoutComponent() {
           throw new Error("Stripe session URL not found");
         }
       }
-      // For other payment methods like Razorpay, handle accordingly
+      // For other payment methods like COD, handle accordingly
       else {
         const orderResponse = await createOrder(
           data?.products,
@@ -469,10 +488,6 @@ export default function CheckoutComponent() {
                 <span>₹ {data?.cartTotal}</span>
               </div>
               <div className="mt-[10px] flex flex-col gap-[5px] ">
-                {/* <span className="bg-[#eeeeee75] p-[5px] text-[14px] border border-[#cccccc17]  ">
-                {coupon === "" ? "Total: " : "Total before :"}
-                <b>₹ {cart.cartTotal}</b>
-              </span> */}
                 {discount > 0 && (
                   <span className="discount bg-green-700 text-white p-[5px] text-[14px] border flex justify-between border-[#cccccc17]  ">
                     Coupon applied :{" "}
