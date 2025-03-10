@@ -54,6 +54,7 @@ const ProductPage = async ({
   const product = await getSingleProduct(slug, style, size);
   if (!product.success) {
     // return <IdInvalidError />;
+    redirect("/");
   }
   const images = product.subProducts[0].images.map((image: any) => image.url);
   const subCategoryProducts = product.subCategories.map((i: any) => i._id);
