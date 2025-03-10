@@ -369,6 +369,6 @@ export const getAllFeaturedProducts = unstable_cache(
   },
   ["featured_products"],
   {
-    revalidate: 1800,
+    revalidate: 100,
   }
 );
