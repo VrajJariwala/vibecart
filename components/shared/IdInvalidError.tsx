@@ -7,7 +7,7 @@ const IdInvalidError = () => {
   return (
     <div className="h-screen flex flex-col justify-center items-center bg-gray-100">
       <Image
-        src={"/images/broken-link.jpg"}
+        src={"/images/broken-link.png"}
         alt="Some thing went wrong image"
         width={350}
         height={350}

@@ -13,7 +13,12 @@ import { getAllCrazyDealOffers, getAllSpecialComboOffers } from '@/lib/database/
 import { getNewArrivalProducts, getTopSellingProducts } from '@/lib/database/actions/product.actions'
 import { getAllSubCategoriesByName } from '@/lib/database/actions/subCategory.actions'
 
+
 import React from 'react'
+// export const metadata: Metadata = {
+//   title: '...',
+//   description: '...',
+// }
 
 
 const Homepage = async  ()  => {
