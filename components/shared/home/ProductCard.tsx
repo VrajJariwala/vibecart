@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
-
 import Link from "next/link";
+
 interface Product {
   id: string;
   name: string;
@@ -21,7 +21,7 @@ interface Product {
 const Card = ({ product, shop }: { product: Product; shop?: boolean }) => {
   return (
     <div
-      className="w-full flex-shrink-0 mb-2 group  justify-center "
+      className="w-full flex-shrink-0 mb-2 group justify-center"
       key={product.slug}
     >
       <div className="relative overflow-hidden">
@@ -84,12 +84,12 @@ const Card = ({ product, shop }: { product: Product; shop?: boolean }) => {
                   100
               }`}
         </span>
-        {/* <span className="text-gray-500 line-through text-sm">
+        <span className="text-gray-500 line-through text-sm">
           ₹{product.originalPrice.toFixed(2)}
-        </span> */}
+        </span>
       </div>
       {!shop && (
-        <Link href={`/product/${product.id}`}>
+        <Link href={`/product/${product.slug}?style=0`}>
           <Button className="w-full bg-black text-white hover:bg-gray-800">
             VIEW PRODUCT
           </Button>

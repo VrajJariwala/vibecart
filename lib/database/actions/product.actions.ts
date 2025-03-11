@@ -36,7 +36,7 @@ export const getTopSellingProducts = unstable_cache(
   },
   ["top_selling_products"],
   {
-    revalidate: 1800,
+    revalidate: 1,
   }
 );
 
@@ -67,7 +67,7 @@ export const getNewArrivalProducts = unstable_cache(
   },
   ["new_arrival_products"],
   {
-    revalidate: 1800,
+    revalidate: 1,
   }
 );
 // fetch products by query
@@ -196,7 +196,7 @@ export const getSingleProduct = unstable_cache(
   },
   ["product"],
   {
-    revalidate: 1800,
+    revalidate: 1,
     tags: ["product"],
   }
 );
@@ -346,7 +346,7 @@ export const getRelatedProductsBySubCategoryIds = unstable_cache(
   },
   ["subCatgeory_products"],
   {
-    revalidate: 1800,
+    revalidate: 1,
   }
 );
 // get featured products
@@ -369,6 +369,6 @@ export const getAllFeaturedProducts = unstable_cache(
   },
   ["featured_products"],
   {
-    revalidate: 100,
+    revalidate: 1,
   }
 );
