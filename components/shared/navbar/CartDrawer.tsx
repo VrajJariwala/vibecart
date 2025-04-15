@@ -80,11 +80,13 @@ const CartDrawer = () => {
         .then((res) => {
           if (res?.success) {
             setLoading(false);
+            setCartMenuOpen(false);
             router.replace("/checkout");
           }
         })
         .catch((err) => console.log(err));
     } else {
+      setCartMenuOpen(false);
       router.push("/sign-in?next=checkout");
     }
   };
@@ -131,6 +133,11 @@ const CartDrawer = () => {
             )}
           </div>
           <div className="absolute bottom-2 w-[90%] mt-6  bg-white">
+            {/* Total Price Section */}
+  <div className="flex justify-between items-center text-lg font-semibold">
+    <span>Total:</span>
+    <span>₹{total}</span>
+  </div>
             <p className="text-sm text-gray-500">
               Tax included. Shipping calculated at checkout.
             </p>

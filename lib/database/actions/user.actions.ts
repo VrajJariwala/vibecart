@@ -120,6 +120,7 @@ export async function changeActiveAddress(id: any, user_id: any) {
     handleError(error);
   }
 }
+
 export async function deleteAddress(id: any, user_id: any) {
   try {
     await connectToDatabase();
@@ -141,6 +142,7 @@ export async function deleteAddress(id: any, user_id: any) {
     handleError(error);
   }
 }
+
 export async function saveAddress(address: any, user_id: any) {
   try {
     // Find the user by user_id
@@ -170,27 +172,128 @@ export async function saveAddress(address: any, user_id: any) {
 export async function applyCoupon(coupon: any, user_id: any) {
   try {
     await connectToDatabase();
+    
+    // Find the user
     const user = await User.findById(user_id);
-    const checkCoupon = await Coupon.findOne({ coupon });
     if (!user) {
       return { message: "User not found", success: false };
     }
-    if (checkCoupon == null) {
+    
+    // Find the coupon
+    const checkCoupon = await Coupon.findOne({ coupon });
+    if (!checkCoupon) {
       return { message: "Invalid Coupon", success: false };
     }
-    const { cartTotal } = await Cart.findOne({ user: user_id });
-    let totalAfterDiscount =
-      cartTotal - (cartTotal * checkCoupon.discount) / 100;
-    await Cart.findByIdAndUpdate(user._id, { totalAfterDiscount });
-    return JSON.parse(
-      JSON.stringify({
-        totalAfterDiscount: totalAfterDiscount.toFixed(2),
-        discount: checkCoupon.discount,
-        message: "Successfully fetched Coupon",
-        success: true,
-      })
-    );
-  } catch (error) {}
+    
+    // Check if coupon is expired
+    const currentDate = new Date();
+    const startDate = new Date(checkCoupon.startDate);
+    const endDate = new Date(checkCoupon.endDate);
+    
+    if (currentDate < startDate) {
+      return { message: "This coupon is not active yet", success: false };
+    }
+    
+    if (currentDate > endDate) {
+      return { message: "This coupon has expired", success: false };
+    }
+    
+    // Get user's cart
+    const cart = await Cart.findOne({ user: user_id }).populate({
+      path: 'products.product',
+      select: '_id'
+    });
+    
+    if (!cart || !cart.products || cart.products.length === 0) {
+      return { message: "Your cart is empty", success: false };
+    }
+    
+    // If coupon is not global, check if it applies to any product in the cart
+    if (checkCoupon.isGlobal === false && checkCoupon.applicableProducts && checkCoupon.applicableProducts.length > 0) {
+      // Get the list of product IDs in the user's cart
+      const cartProductIds = cart.products.map((item: any) => 
+        item.product._id.toString()
+      );
+      
+      // Get the applicable product IDs for the coupon
+      const applicableProductIds = checkCoupon.applicableProducts.map((id: any) => 
+        id.toString()
+      );
+      
+      // Check if there's an overlap between cart products and applicable products
+      const hasApplicableProduct = cartProductIds.some((productId: string) => 
+        applicableProductIds.includes(productId)
+      );
+      
+      if (!hasApplicableProduct) {
+        return { 
+          message: "This coupon cannot be applied to items in your cart", 
+          success: false 
+        };
+      }
+      
+      // Calculate total of applicable products only
+      let applicableTotal = 0;
+      let nonApplicableTotal = 0;
+      
+      for (const item of cart.products) {
+        const productId = item.product._id.toString();
+        const itemTotal = item.price * item.qty;
+        
+        if (applicableProductIds.includes(productId)) {
+          applicableTotal += itemTotal;
+        } else {
+          nonApplicableTotal += itemTotal;
+        }
+      }
+      
+      // Apply discount only to the applicable total
+      const discountAmount = (applicableTotal * checkCoupon.discount) / 100;
+      const totalAfterDiscount = cart.cartTotal - discountAmount;
+      
+      // Update cart with new total
+      await Cart.findOneAndUpdate(
+        { user: user_id },
+        { totalAfterDiscount }
+      );
+      
+      return JSON.parse(
+        JSON.stringify({
+          totalAfterDiscount: totalAfterDiscount.toFixed(2),
+          discount: checkCoupon.discount,
+          applicableTo: "specific",
+          discountAmount: discountAmount.toFixed(2),
+          message: "Successfully applied coupon to eligible products",
+          success: true,
+        })
+      );
+    } else {
+      // Global coupon - apply to entire cart
+      const { cartTotal } = cart;
+      let totalAfterDiscount = cartTotal - (cartTotal * checkCoupon.discount) / 100;
+      
+      await Cart.findOneAndUpdate(
+        { user: user_id },
+        { totalAfterDiscount }
+      );
+      
+      return JSON.parse(
+        JSON.stringify({
+          totalAfterDiscount: totalAfterDiscount.toFixed(2),
+          discount: checkCoupon.discount,
+          applicableTo: "global",
+          message: "Successfully applied coupon",
+          success: true,
+        })
+      );
+    }
+  } catch (error) {
+    console.error("Error applying coupon:", error);
+    return {
+      message: "Failed to apply coupon",
+      success: false
+    };
+  }
 }
 
 // get all orders of user for their profile:

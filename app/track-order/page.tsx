@@ -25,6 +25,7 @@ const TrackOrderPage = () => {
 
     try {
       router.push(`/order/${orderId}`);
+      // router.push(`/track-order-details/${orderId}`);
     } catch (err: any) {
       setError(
         "An error occurred while looking up your order. Please try again later:" +

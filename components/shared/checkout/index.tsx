@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { applyCoupon, saveAddress } from "@/lib/database/actions/user.actions";
-
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -31,6 +30,14 @@ export default function CheckoutComponent() {
   const [totalAfterDiscount, setTotalAfterDiscount] = useState("");
   const [discount, setDiscount] = useState(0);
   const [data, setData] = useState<any>([]);
+  const [currentlyAppliedCoupon, setCurrentlyAppliedCoupon] = useState<string | null>(null);
+  const [placeOrderLoading, setPlaceOrderLoading] = useState<boolean>(false);
+  const [couponDetails, setCouponDetails] = useState<{
+    discount: number;
+    applicableTo?: "global" | "specific";
+    discountAmount?: string;
+  } | null>(null);
+
   const form = useForm({
     initialValues: {
       firstName: "",
@@ -104,9 +111,15 @@ export default function CheckoutComponent() {
     }
   }, [address]);
 
-  const nextStep = () => setStep(step + 1);
-  const prevStep = () => setStep(step - 1);
+  const cart = useCartStore((state: any) => state.cart.cartItems);
+  const { emptyCart } = useCartStore();
+  const totalSaved: number = cart.reduce((acc: any, curr: any) => {
+    return acc + curr.saved * curr.qty;
+  }, 0);
+  const [subTotal, setSubtotal] = useState<number>(0);
+  const carttotal = Number(subTotal + totalSaved).toFixed(0);
   const router = useRouter();
+
   useEffect(() => {
     if (user?.address) {
       setAddress(user?.address);
@@ -115,36 +128,76 @@ export default function CheckoutComponent() {
       cart.reduce((a: any, c: any) => a + c.price * c.qty, 0).toFixed(2)
     );
   }, [user?.address]);
+
   const isStepCompleted = (currentStep: number) => step > currentStep;
   const isActiveStep = (currentStep: number) => step === currentStep;
-  const applyCouponHandler = async (e: any) => {
+
+  const applyCouponHandler = async (e: React.FormEvent) => {
     e.preventDefault();
-    await applyCoupon(coupon, user._id)
-      .catch((err) => {
-        setCouponError(err);
-      })
-      .then((res) => {
-        if (res.success) {
-          setTotalAfterDiscount(res.totalAfterDiscount);
-          setDiscount(res.discount);
-          toast.success(`Applied ${res.discount}% on order successfully.`);
-          setCouponError("");
-          nextStep();
-        } else if (!res.success) {
-          toast.error(`No Coupon Found`);
-        }
-      });
+    
+    if (!coupon) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    // Check if this exact coupon is already applied
+    if (currentlyAppliedCoupon === coupon.toUpperCase()) {
+      setCouponError("This coupon has already been applied");
+      return;
+    }
+
+    try {
+      const res = await applyCoupon(coupon, user._id);
+      
+      if (res.success) {
+        setTotalAfterDiscount(res.totalAfterDiscount);
+        setDiscount(res.discount);
+        setCurrentlyAppliedCoupon(coupon.toUpperCase());
+        setCouponError("");
+        
+        // Save additional coupon details
+        setCouponDetails({
+          discount: res.discount,
+          applicableTo: res.applicableTo || "global",
+          discountAmount: res.discountAmount
+        });
+        
+        // Message based on coupon type
+        const successMessage = res.applicableTo === "specific" 
+          ? `Applied ${res.discount}% discount to eligible products` 
+          : `Applied ${res.discount}% discount successfully`;
+          
+        toast.success(successMessage);
+        nextStep();
+      } else {
+        setCouponError(res.message || "Invalid coupon code");
+        toast.error(res.message || "Could not apply coupon");
+      }
+    } catch (err) {
+      setCouponError("Failed to apply coupon");
+      toast.error("Failed to apply coupon");
+    }
   };
-  const cart = useCartStore((state: any) => state.cart.cartItems);
-  const { emptyCart } = useCartStore();
 
-  const totalSaved: number = cart.reduce((acc: any, curr: any) => {
-    return acc + curr.saved * curr.qty;
-  }, 0);
-  const [subTotal, setSubtotal] = useState<number>(0);
-  const carttotal = Number(subTotal + totalSaved).toFixed(0);
+  const nextStep = () => setStep(step + 1);
+  
+  const prevStep = () => {
+    if (step === 3) {
+      setCouponError("");
+      setCoupon("");
+    }
+    setStep(step - 1);
+  };
 
-  const [placeOrderLoading, setPlaceOrderLoading] = useState<boolean>(false);
+  const resetCouponState = () => {
+    setCurrentlyAppliedCoupon(null);
+    setCoupon("");
+    setCouponError("");
+    setTotalAfterDiscount("");
+    setDiscount(0);
+    setCouponDetails(null);
+  };
+
   const isDisabled =
     paymentMethod === "" || user?.address.firstName === "" || placeOrderLoading;
 
@@ -168,7 +221,6 @@ export default function CheckoutComponent() {
     try {
       setPlaceOrderLoading(true);
 
-      // Validate the form fields
       const formErrors = form.validate();
       if (formErrors.hasErrors) {
         toast.error("Please correct the errors in the form before proceeding.");
@@ -186,7 +238,6 @@ export default function CheckoutComponent() {
         return;
       }
 
-      // For Stripe Payment
       if (paymentMethod === "stripe") {
         const response = await createStripeOrder(
           data?.products,
@@ -194,28 +245,25 @@ export default function CheckoutComponent() {
           paymentMethod,
           totalAfterDiscount !== "" ? totalAfterDiscount : data?.cartTotal,
           data?.cartTotal,
-          coupon,
+          currentlyAppliedCoupon || "",
           user._id,
           totalSaved
         );
 
-        // Redirect to Stripe Checkout on the client side
         if (response?.sessionUrl) {
           window.location.href = response.sessionUrl;
         } else {
           toast.error("Stripe session URL not found");
           throw new Error("Stripe session URL not found");
         }
-      }
-      // For other payment methods like COD, handle accordingly
-      else {
+      } else {
         const orderResponse = await createOrder(
           data?.products,
           user?.address,
           paymentMethod,
           totalAfterDiscount !== "" ? totalAfterDiscount : data?.cartTotal,
           data?.cartTotal,
-          coupon,
+          currentlyAppliedCoupon || "",
           user._id,
           totalSaved
         );
@@ -231,7 +279,7 @@ export default function CheckoutComponent() {
       console.error("Error placing order:", error);
       toast.error("An error occurred. Please try again.");
     } finally {
-      setPlaceOrderLoading(false); // Reset loading state
+      setPlaceOrderLoading(false);
     }
   };
 
@@ -240,114 +288,90 @@ export default function CheckoutComponent() {
       <h1 className="text-2xl font-bold mb-6 text-center">CHECKOUT</h1>
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-2/3">
-          {/* Stepper Tracker */}
           <div className="relative flex items-center justify-between mb-8">
-            {/* Step 1 */}
-            <div className="relative flex flex-col items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                  isActiveStep(1)
-                    ? "bg-primary text-white border-primary"
-                    : isStepCompleted(1)
-                    ? "bg-green-500 text-white border-green-500"
-                    : "bg-gray-200 text-gray-500 border-gray-300"
-                }`}
-              >
-                {isStepCompleted(1) ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <MapPin className="w-5 h-5" />
-                )}
+            {/* Stepper UI */}
+            <div className="flex items-center w-full">
+              <div className={`flex flex-col items-center`}>
+                <div
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                    isStepCompleted(1) || isActiveStep(1)
+                      ? "bg-green-600 border-green-600 text-white"
+                      : "border-gray-300 text-gray-300"
+                  }`}
+                >
+                  {isStepCompleted(1) ? (
+                    <CheckCircle className="w-6 h-6" />
+                  ) : (
+                    <MapPin className="w-6 h-6" />
+                  )}
+                </div>
+                <span
+                  className={`mt-2 ${
+                    isStepCompleted(1) || isActiveStep(1)
+                      ? "text-green-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  Address
+                </span>
               </div>
-              <span
-                className={`mt-2 text-sm ${
-                  isActiveStep(1)
-                    ? "text-primary font-semibold"
-                    : isStepCompleted(1)
-                    ? "text-green-500"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <span className="hidden lg:block">Delivery Address</span>
-              </span>
-            </div>
-
-            {/* Horizontal Line */}
-            <div
-              className={`flex-1 border-t-2 mx-4 ${
-                step >= 2 ? "border-primary" : "border-gray-300"
-              }`}
-            ></div>
-
-            {/* Step 2 */}
-            <div className="relative flex flex-col items-center">
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                  isActiveStep(2)
-                    ? "bg-primary text-white border-primary"
-                    : isStepCompleted(2)
-                    ? "bg-green-500 text-white border-green-500"
-                    : "bg-gray-200 text-gray-500 border-gray-300"
+                className={`flex-1 h-1 mx-2 ${
+                  isStepCompleted(1) ? "bg-green-600" : "bg-gray-300"
                 }`}
-              >
-                {isStepCompleted(2) ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <Ticket className="w-5 h-5" />
-                )}
+              ></div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                    isStepCompleted(2) || isActiveStep(2)
+                      ? "bg-green-600 border-green-600 text-white"
+                      : "border-gray-300 text-gray-300"
+                  }`}
+                >
+                  {isStepCompleted(2) ? (
+                    <CheckCircle className="w-6 h-6" />
+                  ) : (
+                    <Ticket className="w-6 h-6" />
+                  )}
+                </div>
+                <span
+                  className={`mt-2 ${
+                    isStepCompleted(2) || isActiveStep(2)
+                      ? "text-green-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  Coupon
+                </span>
               </div>
-              <span
-                className={`mt-2 text-sm ${
-                  isActiveStep(2)
-                    ? "text-primary font-semibold"
-                    : isStepCompleted(2)
-                    ? "text-green-500"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <span className="hidden lg:block">Apply Coupon</span>
-              </span>
-            </div>
-
-            {/* Horizontal Line */}
-            <div
-              className={`flex-1 border-t-2 mx-4 ${
-                step >= 3 ? "border-primary" : "border-gray-300"
-              }`}
-            ></div>
-
-            {/* Step 3 */}
-            <div className="relative flex flex-col items-center">
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                  isActiveStep(3)
-                    ? "bg-primary text-white border-primary"
-                    : isStepCompleted(3)
-                    ? "bg-green-500 text-white border-green-500"
-                    : "bg-gray-200 text-gray-500 border-gray-300"
+                className={`flex-1 h-1 mx-2 ${
+                  isStepCompleted(2) ? "bg-green-600" : "bg-gray-300"
                 }`}
-              >
-                {isStepCompleted(3) ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <CreditCard className="w-5 h-5" />
-                )}
+              ></div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+                    isStepCompleted(3) || isActiveStep(3)
+                      ? "bg-green-600 border-green-600 text-white"
+                      : "border-gray-300 text-gray-300"
+                  }`}
+                >
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <span
+                  className={`mt-2 ${
+                    isStepCompleted(3) || isActiveStep(3)
+                      ? "text-green-600"
+                      : "text-gray-400"
+                  }`}
+                >
+                  Payment
+                </span>
               </div>
-              <span
-                className={`mt-2 text-sm ${
-                  isActiveStep(3)
-                    ? "text-primary font-semibold"
-                    : isStepCompleted(3)
-                    ? "text-green-500"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <span className="hidden lg:block">Choose Payment Method</span>
-              </span>
             </div>
           </div>
 
-          {/* Step 1: Delivery Address Form */}
           {step === 1 && (
             <form
               onSubmit={form.onSubmit(async (values) => {
@@ -369,22 +393,39 @@ export default function CheckoutComponent() {
             </form>
           )}
 
-          {/* Step 2: Apply Coupon */}
           {step === 2 && (
-            <form
-              onSubmit={(e) => {
-                applyCouponHandler(e);
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={applyCouponHandler} className="space-y-4">
               <ApplyCouponForm
                 setCoupon={setCoupon}
                 couponError={couponError}
+                isCouponApplied={currentlyAppliedCoupon !== null}
+                couponCode={coupon}
+                couponDetails={couponDetails || undefined}
               />
+              {currentlyAppliedCoupon && (
+                <div className="text-green-500 text-sm">
+                  Applied coupon: {currentlyAppliedCoupon} (-{discount}%)
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={resetCouponState}
+                  disabled={!currentlyAppliedCoupon}
+                >
+                  Remove Coupon
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={!coupon || (currentlyAppliedCoupon === coupon.toUpperCase())}
+                >
+                  {currentlyAppliedCoupon ? "Change Coupon" : "Apply Coupon"}
+                </Button>
+              </div>
             </form>
           )}
 
-          {/* Step 3: Choose Payment */}
           {step === 3 && (
             <form
               onSubmit={(e) => {
@@ -417,7 +458,7 @@ export default function CheckoutComponent() {
                 Previous
               </Button>
             )}
-            {step < 3 && (
+           {step < 3 && (
               <Button onClick={nextStep} className="ml-auto">
                 Continue
               </Button>
@@ -425,32 +466,48 @@ export default function CheckoutComponent() {
           </div>
         </div>
 
-        {/* Order Summary */}
-        <div className="w-full bg-gray-100 lg:w-1/3  lg:sticky top-[1rem] self-start">
+        <div className="w-full bg-gray-100 lg:w-1/3 lg:sticky top-[1rem] self-start">
           <div className="p-6">
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
             <div className="space-y-4">
-              {data.products?.map((i: any, index: number) => (
-                <div className="flex items-center space-x-4" key={index}>
-                  <img
-                    src={i.image}
-                    alt={i.name}
-                    className="w-20 h-20 object-cover"
-                  />
-                  <div>
-                    <h3 className="font-medium text-sm">{i.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Size: {i.size}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Qty: {i.qty}
-                    </p>
-                    <p className="font-semibold text-sm">
-                      ₹ {i.price} * {i.qty} = ₹{i.price * i.qty}
-                    </p>
+              {data.products?.map((i: any, index: number) => {
+                // Check if this product is eligible for product-specific coupon
+                const isEligibleForCoupon = couponDetails?.applicableTo === "specific" && 
+                  currentlyAppliedCoupon && 
+                  data?.products?.some((product: any) => {
+                    const productId = product.product?._id?.toString();
+                    return productId === i.product?._id?.toString();
+                  });
+                
+                return (
+                  <div className="flex items-center space-x-4" key={index}>
+                    <img
+                      src={i.image}
+                      alt={i.name}
+                      className="w-20 h-20 object-cover"
+                    />
+                    <div>
+                      <h3 className="font-medium text-sm">{i.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Size: {i.size}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Qty: {i.qty}
+                      </p>
+                      <p className="font-semibold text-sm">
+                        ₹ {i.price} * {i.qty} = ₹{i.price * i.qty}
+                      </p>
+                      {isEligibleForCoupon && (
+                        <div className="mt-1">
+                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                            Eligible for {couponDetails.discount}% off
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-6 space-y-2">
               <div className="flex justify-between">
@@ -480,34 +537,40 @@ export default function CheckoutComponent() {
                 }`}
               >
                 <span>
-                  {" "}
                   {totalAfterDiscount !== ""
-                    ? "Total: "
-                    : "Total before :"}{" "}
+                    ? "Total before coupon: "
+                    : "Total: "}{" "}
                 </span>
                 <span>₹ {data?.cartTotal}</span>
               </div>
-              <div className="mt-[10px] flex flex-col gap-[5px] ">
+              <div className="mt-[10px] flex flex-col gap-[5px]">
                 {discount > 0 && (
-                  <span className="discount bg-green-700 text-white p-[5px] text-[14px] border flex justify-between border-[#cccccc17]  ">
-                    Coupon applied :{" "}
-                    <b className="text-[15px] ">- {discount}%</b>
+                  <span className="discount bg-green-700 text-white p-[5px] text-[14px] border flex justify-between border-[#cccccc17]">
+                    {couponDetails?.applicableTo === "specific" 
+                      ? "Coupon applied to eligible products:" 
+                      : "Coupon applied:"}{" "}
+                    <b className="text-[15px]">- {discount}%</b>
                   </span>
                 )}
-                {totalAfterDiscount < data?.cartTotal &&
-                  totalAfterDiscount != "" && (
-                    <span className=" p-[5px] text-lg flex justify-between border border-[#cccccc17]  ">
-                      Total after Discount :{" "}
-                      <b className="text-[15px] ">₹ {totalAfterDiscount}</b>
-                    </span>
-                  )}
+                {couponDetails?.applicableTo === "specific" && couponDetails?.discountAmount && (
+                  <span className="discount bg-green-100 text-green-800 p-[5px] text-[14px] border flex justify-between border-[#cccccc17]">
+                    Discount amount:{" "}
+                    <b className="text-[15px]">₹ {couponDetails.discountAmount}</b>
+                  </span>
+                )}
+                {totalAfterDiscount && totalAfterDiscount !== "" && (
+                  <span className="p-[5px] text-lg flex justify-between border border-[#cccccc17]">
+                    Total after Discount:{" "}
+                    <b className="text-[15px]">₹ {totalAfterDiscount}</b>
+                  </span>
+                )}
               </div>
             </div>
 
             <Button
-              onClick={() => placeOrderHandler()}
+              onClick={placeOrderHandler}
               disabled={isDisabled}
-              className={`mt-[1rem] flex justify-center pt-[10px] gap-[10px] disabled:bg-[#ccc]  w-full h-[45px] bg-green-700 text-white ${
+              className={`mt-[1rem] flex justify-center pt-[10px] gap-[10px] disabled:bg-[#ccc] w-full h-[45px] bg-green-700 text-white ${
                 isDisabled ? "bg-theme_light cursor-not-allowed" : ""
               }`}
             >

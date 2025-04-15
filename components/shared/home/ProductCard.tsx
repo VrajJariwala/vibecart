@@ -5,7 +5,7 @@ import Link from "next/link";
 interface Product {
   id: string;
   name: string;
-  category: string;
+  category?: string; // Make category optional
   image: string;
   rating: number;
   slug: string;
@@ -52,9 +52,9 @@ const Card = ({ product, shop }: { product: Product; shop?: boolean }) => {
       </div>
       {shop ? null : (
         <div className="text-xs text-gray-500 mb-1 textGap text-[10px]">
-          {product.category.length > 25
+          {product.category && product.category.length > 25
             ? product.category.substring(0, 25) + "..."
-            : product.category}
+            : product.category || "Uncategorized"} {/* Fallback for undefined category */}
         </div>
       )}
 

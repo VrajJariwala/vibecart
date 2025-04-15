@@ -26,7 +26,7 @@ export const getAllSubCategoriesByParentId = unstable_cache(
   },
   ["parent_subCategories"],
   {
-    revalidate: 1800,
+    revalidate: 1,
   }
 );
 // get all sub categories by its parent name
@@ -69,6 +69,6 @@ export const getAllSubCategoriesByName = unstable_cache(
   },
   ["subCategories"],
   {
-    revalidate: 1800,
+    revalidate: 1,
   }
 );

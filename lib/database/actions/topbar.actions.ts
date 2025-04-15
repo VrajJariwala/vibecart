@@ -28,6 +28,6 @@ export const getAllTopBars = unstable_cache(
   },
   ["topbar"],
   {
-    revalidate: 1800,
+    revalidate: 1,
   }
 );

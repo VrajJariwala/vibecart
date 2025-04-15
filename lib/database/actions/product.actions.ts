@@ -17,6 +17,7 @@ export const getTopSellingProducts = unstable_cache(
       const products = await Product.find()
         .sort({ "subProduct.sold": -1 })
         .limit(4)
+        .populate("category", "name")
         .lean();
       if (!products) {
         return {
@@ -48,6 +49,7 @@ export const getNewArrivalProducts = unstable_cache(
       const products = await Product.find()
         .sort({ createdAt: -1 })
         .limit(4)
+        .populate("category", "name")
         .lean();
       if (!products) {
         return {
@@ -201,75 +203,73 @@ export const getSingleProduct = unstable_cache(
   }
 );
 
-// create a product review for individual product
 export async function createProductReview(
-  rating: number,
-  review: string,
+  rating: number | null,
+  review: string | null,
   clerkId: string,
-  productId: string
+  productId: string,
+  action: "create" | "edit" | "delete" = "create"
 ) {
   try {
     await connectToDatabase();
     const product = await Product.findById(productId);
     const user = await User.findOne({ clerkId });
 
-    if (product) {
-      const exist = product.reviews.find(
-        (x: any) => x.reviewBy.toString() == user._id
-      );
-      if (exist) {
-        await Product.updateOne(
-          {
-            _id: productId,
-            "reviews._id": exist._id,
-          },
-          {
-            $set: {
-              "reviews.$.review": review,
-              "reviews.$.rating": rating,
-              "reviews.$.reviewCreatedAt": Date.now(),
-            },
-          },
-          {
-            new: true,
-          }
-        );
-        const updatedProduct = await Product.findById(productId);
-        updatedProduct.numReviews = updatedProduct.reviews.length;
-        updatedProduct.rating =
-          updatedProduct.reviews.reduce((a: any, r: any) => r.rating + a, 0) /
-          updatedProduct.reviews.length;
-        await updatedProduct.save();
-        await updatedProduct.populate("reviews.reviewBy");
-        revalidateTag("product");
-        return JSON.parse(
-          JSON.stringify({ reviews: updatedProduct.reviews.reverse() })
-        );
-      } else {
-        const full_review = {
-          reviewBy: user._id,
-          rating,
-          review,
-          reviewCreatedAt: Date.now(),
-        };
-        product.reviews.push(full_review);
-        product.numReviews = product.reviews.length;
-        product.rating =
-          product.reviews.reduce((a: any, r: any) => r.rating + a, 0) /
-          product.reviews.length;
-        await product.save();
-        await product.populate("reviews.reviewBy");
-        revalidateTag("product");
-
-        return JSON.parse(
-          JSON.stringify({ reviews: product.reviews.reverse() })
-        );
-      }
+    if (!product || !user) {
+      throw new Error("Product or user not found");
     }
+
+    const exist = product.reviews.find(
+      (x: any) => x.reviewBy.toString() === user._id.toString()
+    );
+
+    if (action === "create") {
+      if (exist) {
+        throw new Error("Review already exists. Use 'edit' action.");
+      }
+      // Add new review
+      product.reviews.push({
+        reviewBy: user._id,
+        rating,
+        review,
+        reviewCreatedAt: Date.now(),
+      });
+    } else if (action === "edit") {
+      if (!exist) {
+        throw new Error("Review not found. Use 'create' action.");
+      }
+      // Update existing review
+      exist.rating = rating;
+      exist.review = review;
+      exist.reviewCreatedAt = Date.now();
+    } else if (action === "delete") {
+      if (!exist) {
+        throw new Error("Review not found.");
+      }
+      // Remove review from the array
+      product.reviews = product.reviews.filter(
+        (r: any) => r.reviewBy.toString() !== user._id.toString()
+      );
+    }
+
+    // Recalculate numReviews and rating
+    product.numReviews = product.reviews.length;
+    product.rating =
+      product.reviews.length > 0
+        ? product.reviews.reduce((a: any, r: any) => r.rating + a, 0) /
+          product.reviews.length
+        : 0;
+
+    await product.save();
+    await product.populate("reviews.reviewBy");
+    revalidateTag("product");
+
+    return JSON.parse(JSON.stringify({ reviews: product.reviews.reverse() }));
   } catch (error) {
     console.log(error);
   }
 }
+
 
 //get product details by its ID:
 

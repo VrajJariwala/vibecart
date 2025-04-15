@@ -89,7 +89,10 @@ const SearchModal = ({ setOpen }: { setOpen: any }) => {
             <div className="flex flex-wrap gap-2">
               {trendingSearches.map((search) => (
                 <Button
-                  onClick={() => setQuery(search)}
+                  onClick={() => {
+                    setQuery(search);
+                    setOpen(false);
+                  }}
                   key={search}
                   variant={"outline"}
                   size={"sm"}
@@ -111,7 +114,7 @@ const SearchModal = ({ setOpen }: { setOpen: any }) => {
             <div className="flex space-x-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-4 sm:space-x-0 sm:gap-2">
               {query.length > 0
                 ? products.map((product: any, index: number) => (
-                    <Link key={index} href={`/product/${product.slug}?style=0`}>
+                    <Link key={index} href={`/product/${product.slug}?style=0`}onClick={() => setOpen(false)}>
                       <div className="space-y-2 min-w-[110px] flex-shrink-0 sm:min-w-0">
                         <div className="aspect-square relative">
                           <img
@@ -145,7 +148,7 @@ const SearchModal = ({ setOpen }: { setOpen: any }) => {
                     </Link>
                   ))
                 : products.map((product: any, index) => (
-                    <Link key={index} href={`/product/${product.slug}?style=0`}>
+                    <Link key={index} href={`/product/${product.slug}?style=0`} onClick={() => setOpen(false)}>
                       <div className="space-y-2 min-w-[110px] flex-shrink-0 sm:min-w-0">
                         <div className="aspect-square relative">
                           <img

@@ -24,7 +24,7 @@ export const getAllSpecialComboOffers = unstable_cache(
   },
   ["special_combos"],
   {
-    revalidate: 600,
+    revalidate: 6,
   }
 );
 // Get all offers for home screen
@@ -46,6 +46,6 @@ export const getAllCrazyDealOffers = unstable_cache(
   },
   ["crazy_deals"],
   {
-    revalidate: 600,
+    revalidate: 6,
   }
 );
